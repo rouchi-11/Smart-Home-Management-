@@ -1,0 +1,336 @@
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.Timer;
+import java.util.TimerTask;
+
+// Abstract Class for Appliances
+abstract class Appliance {
+    private boolean isOn;
+    private int energyConsumption; // Energy consumption in watts
+
+    public Appliance(int energyConsumption) {
+        this.energyConsumption = energyConsumption;
+    }
+
+    public abstract void turnOn();
+    public abstract void turnOff();
+
+    public boolean isOn() {
+        return isOn;
+    }
+
+    public void setOn(boolean on) {
+        this.isOn = on;
+    }
+
+    public int getEnergyConsumption() {
+        return energyConsumption;
+    }
+}
+
+// Light Class (Inherits Appliance)
+class Light extends Appliance {
+    private int brightness;
+
+    public Light() {
+        super(60); // 60 watts for a light bulb
+        brightness = 0;
+    }
+
+    @Override
+    public void turnOn() {
+        setOn(true);
+        System.out.println("Light is turned ON.");
+    }
+
+    @Override
+    public void turnOff() {
+        setOn(false);
+        System.out.println("Light is turned OFF.");
+    }
+
+    public void adjustBrightness(int level) {
+        if (isOn()) {
+            this.brightness = level;
+            System.out.println("Brightness adjusted to " + level);
+        } else {
+            System.out.println("Turn on the light first!");
+        }
+    }
+}
+
+// Thermostat Class (Inherits Appliance)
+class Thermostat extends Appliance {
+    private int temperature;
+
+    public Thermostat() {
+        super(1200); // 1200 watts for a thermostat
+        temperature = 22;
+    }
+
+    @Override
+    public void turnOn() {
+        setOn(true);
+        System.out.println("Thermostat is turned ON.");
+    }
+
+    @Override
+    public void turnOff() {
+        setOn(false);
+        System.out.println("Thermostat is turned OFF.");
+    }
+
+    public void setTemperature(int temp) {
+        if (isOn()) {
+            this.temperature = temp;
+            System.out.println("Temperature set to " + temp + "°C");
+        } else {
+            System.out.println("Turn on the thermostat first!");
+        }
+    }
+}
+
+// SecurityCamera Class (Inherits Appliance, Implements SecuritySystem)
+class SecurityCamera extends Appliance implements SecuritySystem {
+    public SecurityCamera() {
+        super(10); // 10 watts for a camera
+    }
+
+    @Override
+    public void turnOn() {
+        setOn(true);
+        System.out.println("Security Camera is turned ON.");
+    }
+
+    @Override
+    public void turnOff() {
+        setOn(false);
+        System.out.println("Security Camera is turned OFF.");
+    }
+
+    @Override
+    public void monitor() {
+        if (isOn()) {
+            System.out.println("Security Camera is monitoring.");
+        } else {
+            System.out.println("Turn on the Security Camera first!");
+        }
+    }
+}
+
+// DoorLock Class (Implements SecuritySystem)
+class DoorLock implements SecuritySystem {
+    private boolean locked;
+
+    public DoorLock() {
+        this.locked = false;
+    }
+
+    public void lock() {
+        locked = true;
+        System.out.println("Door is locked.");
+    }
+
+    public void unlock() {
+        locked = false;
+        System.out.println("Door is unlocked.");
+    }
+
+    @Override
+    public void monitor() {
+        System.out.println("Monitoring door access: " + (locked ? "Locked" : "Unlocked"));
+    }
+}
+
+// Interface for SecuritySystem
+interface SecuritySystem {
+    void monitor();
+}
+
+// Room Class (Aggregation of multiple appliances)
+class Room {
+    private String roomName;
+    private List<Appliance> appliances;
+
+    public Room(String roomName) {
+        this.roomName = roomName;
+        appliances = new ArrayList<>();
+    }
+
+    public void addAppliance(Appliance appliance) {
+        appliances.add(appliance);
+    }
+
+    public String getRoomName() {
+        return roomName;
+    }
+
+    public List<Appliance> getAppliances() {
+        return appliances;
+    }
+
+    public void manageAppliances() {
+        for (Appliance appliance : appliances) {
+            appliance.turnOn(); // Default to turn ON all appliances
+        }
+    }
+
+    // Calculate total energy usage
+    public int getTotalEnergyUsage() {
+        int totalUsage = 0;
+        for (Appliance appliance : appliances) {
+            if (appliance.isOn()) {
+                totalUsage += appliance.getEnergyConsumption();
+            }
+        }
+        return totalUsage;
+    }
+}
+
+// Logging class for File I/O
+class LogHandler {
+    private static final String FILE_PATH = "security_log.txt";
+
+    public static void logEvent(String event) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH, true))) {
+            writer.write(event + "\n");
+        } catch (IOException e) {
+            System.out.println("Error writing to log file: " + e.getMessage());
+        }
+    }
+
+    public static void readLogs() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
+            String line;
+            System.out.println("\n--- Security Log ---");
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading log file: " + e.getMessage());
+        }
+    }
+}
+
+// Main Class to Run the System with Enhanced Features
+public class SmartHome {
+    private static Map<String, String> users = new HashMap<>();
+    private static Scanner sc = new Scanner(System.in);
+
+    public static void main(String[] args) throws InterruptedException {
+        // Adding users
+        users.put("admin", "password"); // Customizable login system
+
+        // Login
+        if (!authenticateUser()) {
+            System.out.println("Login failed! Exiting...");
+            return;
+        }
+
+        // Create rooms and appliances
+        Room livingRoom = new Room("Living Room");
+        Light light = new Light();
+        Thermostat thermostat = new Thermostat();
+        SecurityCamera camera = new SecurityCamera();
+        DoorLock doorLock = new DoorLock();
+
+        livingRoom.addAppliance(light);
+        livingRoom.addAppliance(thermostat);
+        livingRoom.addAppliance(camera);
+
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+
+        // Personalized menu-driven system with features
+        while (true) {
+            System.out.println("\n--- Personalized Smart Home Menu ---");
+            System.out.println("1. Turn ON all appliances in the Living Room");
+            System.out.println("2. Turn OFF all appliances in the Living Room");
+            System.out.println("3. Adjust Light Brightness");
+            System.out.println("4. Set Thermostat Temperature");
+            System.out.println("5. Lock the Door");
+            System.out.println("6. Unlock the Door");
+            System.out.println("7. View Energy Usage");
+            System.out.println("8. Schedule Appliance (e.g., turn off after 5 seconds)");
+            System.out.println("9. View Security Log");
+            System.out.println("10. Exit");
+            System.out.print("Choose an option: ");
+            int choice = sc.nextInt();
+
+            switch (choice) {
+                case 1:
+                    executor.submit(livingRoom::manageAppliances);
+                    break;
+                case 2:
+                    executor.submit(() -> {
+                        for (Appliance appliance : livingRoom.getAppliances()) {
+                            appliance.turnOff();
+                        }
+                    });
+                    break;
+                case 3:
+                    System.out.print("Enter brightness level (0-100): ");
+                    int brightness = sc.nextInt();
+                    executor.submit(() -> light.adjustBrightness(brightness));
+                    break;
+                case 4:
+                    System.out.print("Set temperature: ");
+                    int temperature = sc.nextInt();
+                    executor.submit(() -> thermostat.setTemperature(temperature));
+                    break;
+                case 5:
+                    executor.submit(doorLock::lock);
+                    LogHandler.logEvent("Door locked.");
+                    break;
+                case 6:
+                    executor.submit(doorLock::unlock);
+                    LogHandler.logEvent("Door unlocked.");
+                    break;
+                case 7:
+                    System.out.println("Total energy usage in " + livingRoom.getRoomName() + ": " + livingRoom.getTotalEnergyUsage() + " watts.");
+                    break;
+                case 8:
+                    System.out.print("Enter seconds to wait before turning off appliances: ");
+                    int seconds = sc.nextInt();
+                    Timer timer = new Timer();
+                    timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            for (Appliance appliance : livingRoom.getAppliances()) {
+                                appliance.turnOff();
+                            }
+                            System.out.println("Appliances turned off after " + seconds + " seconds.");
+                        }
+                    }, seconds * 1000);
+                    break;
+                case 9:
+                    executor.submit(LogHandler::readLogs);
+                    break;
+                case 10:
+                    System.out.println("Exiting... Goodbye!");
+                    executor.shutdown();
+                    sc.close();
+                    return;
+                default:
+                    System.out.println("Invalid choice! Please try again.");
+                    break;
+            }
+        }
+    }
+
+    // Personalized user authentication
+    private static boolean authenticateUser() {
+        System.out.print("Enter username: ");
+        String username = sc.next();
+        System.out.print("Enter password: ");
+        String password = sc.next();
+
+        if (users.containsKey(username) && users.get(username).equals(password)) {
+            System.out.println("Welcome, " + username + "!");
+            return true;
+        }
+        System.out.println("Authentication failed. Please try again.");
+        return false;
+    }
+}
