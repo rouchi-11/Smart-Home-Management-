@@ -61,7 +61,7 @@ class Light extends Appliance {
     }
 }
 
-// Thermostat Class (Inherits Appliance)
+// Thermostat Class. (Inherits Appliance)
 class Thermostat extends Appliance {
     private int temperature;
 
