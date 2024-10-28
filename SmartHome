@@ -5,6 +5,25 @@ import java.util.concurrent.Executors;
 import java.util.Timer;
 import java.util.TimerTask;
 
+// User class to hold user credentials
+class User {
+    private String username;
+    private String password;
+
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+}
+
 // Abstract Class for Appliances
 abstract class Appliance {
     private boolean isOn;
@@ -216,12 +235,12 @@ class LogHandler {
 
 // Main Class to Run the System with Enhanced Features
 public class SmartHome {
-    private static Map<String, String> users = new HashMap<>();
+    private static List<User> users = new ArrayList<>();
     private static Scanner sc = new Scanner(System.in);
 
     public static void main(String[] args) throws InterruptedException {
-        // Adding users
-        users.put("admin", "password"); // Customizable login system
+        // Adding a default user
+        users.add(new User("admin", "password"));
 
         // Login
         if (!authenticateUser()) {
@@ -319,17 +338,21 @@ public class SmartHome {
         }
     }
 
-    // Personalized user authentication
+    // Authentication method using ArrayList
     private static boolean authenticateUser() {
         System.out.print("Enter username: ");
         String username = sc.next();
         System.out.print("Enter password: ");
         String password = sc.next();
 
-        if (users.containsKey(username) && users.get(username).equals(password)) {
-            System.out.println("Welcome, " + username + "!");
-            return true;
+        // Check if the entered username and password match any stored user
+        for (User user : users) {
+            if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
+                System.out.println("Welcome, " + username + "!");
+                return true;
+            }
         }
+
         System.out.println("Authentication failed. Please try again.");
         return false;
     }
